@@ -80,3 +80,7 @@ rule rule-1
 
 build /home/gareth/Documents/confidant/tmp/application.zip: rule-1 index.html app.js
 ```
+
+This enables web devs to write their build rules in a comfortable
+setting while leveraging ninja's ability to run independent tasks in
+parallel and update targets incrementally.
