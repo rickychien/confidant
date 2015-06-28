@@ -1,0 +1,7 @@
+/build
+/node_modules
+
+.ninja_deps
+.ninja_log
+build.ninja
+random-copy

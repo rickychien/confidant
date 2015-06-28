@@ -1,0 +1,3 @@
+--compilers babel:babel/register
+--reporter spec
+--ui tdd
