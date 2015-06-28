@@ -16,6 +16,10 @@
     "mz": "^2.0.0"
   },
 
+  "engines": {
+    "node": ">=0.12"
+  },
+
   "scripts": {
     "prepublish": "mkdir -p build && ./node_modules/.bin/babel src --out-dir build --source-maps",
     "test": "./node_modules/.bin/mocha"
