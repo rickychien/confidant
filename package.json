@@ -1,6 +1,6 @@
 {
   "name": "confidant",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "author": "Gareth Aye [:gaye] <gaye@mozilla.com>",
   "bin": "./bin/confidant",
 
