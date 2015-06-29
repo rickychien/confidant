@@ -19,7 +19,12 @@ let testCases = [
           `${dir}/random-copy`,
           `${dir}/one/random-copy`,
           `${dir}/other/random-copy`
-        ].map(path => expect(fs.exists(path)).to.eventually.be.true)
+        ].map(path => {
+          return expect(fs.exists(path))
+          .to
+          .eventually
+          .equal(true, `${path} should exist`);
+        })
       );
     },
   },
@@ -48,7 +53,9 @@ suite('main', function() {
       .then(() => exec('ninja -t clean', execOpts))
       .then(() => fs.unlink(`${dir}/build.ninja`))
       .catch(() => { /* will fail if state is already clean */ })
-      .then(() => main(dir))
+      .then(() => {
+        return main({ dir: dir });
+      })
       .then(() => exec('ninja', execOpts))
       .then(testCase.verify.bind(testCase));
     });

@@ -5,12 +5,22 @@ let Readable = require('stream').Readable;
 let inherits = require('util').inherits;
 let walk = require('walk');
 
-function WalkStream(dir) {
+let defaultOptions = Object.freeze({
+  exclude: []
+});
+
+/**
+ * Options:
+ *
+ *   (Array) exclude - directories to omit from fs scan.
+ */
+function WalkStream(dir, options) {
   Readable.call(this, { objectMode: true });
+  options = Object.assign({}, defaultOptions, options);
   this.buffer = [];
   this.finished = false;
 
-  let walker = walk.walk(dir);
+  let walker = walk.walk(dir, { filters: options.exclude });
   let onfile, onerrors;
 
   walker.on('file', onfile = (root, stat, next) => {

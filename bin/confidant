@@ -1,4 +1,4 @@
 #!/usr/bin/env node
 
 require('babel/polyfill');
-require('../build/main')(process.cwd());
+require('../build/main')();

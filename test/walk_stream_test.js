@@ -5,7 +5,9 @@ suite('WalkStream', function() {
   let stream;
 
   setup(function() {
-    stream = new WalkStream(`${__dirname}/fixtures/walk_stream`);
+    stream = new WalkStream(`${__dirname}/fixtures/walk_stream`, {
+      exclude: ['tmp']
+    });
   });
 
   test('should write all of the files', function(done) {
