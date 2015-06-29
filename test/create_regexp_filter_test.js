@@ -7,13 +7,13 @@ suite('createRegExpFilter', function() {
 
   setup(function() {
     stream = new WalkStream(`${__dirname}/fixtures/config_filter`)
-      .pipe(createRegExpFilter(/.*\/config.js$/));
+      .pipe(createRegExpFilter(/.*\/configure.js$/));
   });
 
   test('data', function(done) {
     let read = [];
     stream.on('data', function(file) {
-      expect(file.endsWith('config.js')).to.be.true;
+      expect(file.endsWith('configure.js')).to.be.true;
       read.push(file);
     });
 
