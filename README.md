@@ -27,7 +27,7 @@ module.exports = [
       // Run the rjs optimizer on the config in 'build.js'.
       // Depends on all of the JavaScripts in js/.
       var config = require('./build.js');
-      rjs.optimize(config);
+      return new Promise(resolve => rjs.optimize(config, resolve));
     }
   },
   {
