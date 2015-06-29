@@ -7,7 +7,7 @@ suite('createRegExpFilter', function() {
 
   setup(function() {
     stream = new WalkStream(`${__dirname}/fixtures/config_filter`)
-      .pipe(createRegExpFilter(/.*\/config.js/));
+      .pipe(createRegExpFilter(/.*\/config.js$/));
   });
 
   test('data', function(done) {
