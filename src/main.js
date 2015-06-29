@@ -10,7 +10,7 @@ let parser = new ArgumentParser({
   addHelp: true
 });
 
-parser.addArgument(['--dir'], {
+parser.addArgument(['dir'], {
   help: 'Where to search for configure.js build files',
   type: 'string',
   defaultValue: process.cwd()
