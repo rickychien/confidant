@@ -43,7 +43,8 @@ NinjaStream.prototype._transform = function(file, encoding, done) {
         return input;
       }),
       true /* isDeep */
-    );
+    )
+    .map(input => `${dir}/${input}`);
 
     let output = `
 rule ${rule}

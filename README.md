@@ -13,8 +13,8 @@ is run for files named `config.js`. `config.js` files look like this:
 // config.js example
 var denodeify = require('promise').denodeify;
 var exec = require('mz/child_process').exec;
+var fs = require('mz/fs');
 var mkdirp = denodeify(require('mkdirp'));
-var move = denodeify(require('fs').rename);
 var ncp = denodeify(require('ncp').ncp);
 var rimraf = denodeify(require('rimraf'));
 var rjs = require('requirejs');
@@ -24,20 +24,20 @@ module.exports = [
     inputs: ['build.js', 'js/**/*.js'],
     output: 'app.js',
     rule: function() {
-      // Run the rjs optimizer on the config in 'build.js'.
-      // Depends on all of the JavaScripts in js/.
-      var config = require('./build.js');
-      return new Promise(resolve => rjs.optimize(config, resolve));
+      return fs.readFile('./build.js', 'utf8').then(function(contents) {
+        var config = JSON.parse(contents);
+        return new Promise(function(resolve) {
+          rjs.optimize(config, resolve);
+        });
+      });
     }
   },
   {
     inputs: ['index.html', 'app.js', 'style/**/*'],
     output: 'application.zip',
     rule: function() {
-      // Make build stage directory.
       return mkdirp('stage')
       .then(function() {
-        // Copy everything into the stage directory.
         return Promise.all([
           ncp('index.html', 'stage/index.html'),
           ncp('app.js', 'stage/app.js'),
@@ -45,18 +45,15 @@ module.exports = [
         ]);
       })
       .then(function() {
-        // Zip everything up.
-        return exec('zip application.zip index.html app.js style/', {
+        return exec('zip application.zip index.html app.js style', {
           cwd: './stage'
         });
       })
       .then(function() {
-        // Move the zipball into the root dir.
-        return move('stage/application.zip', 'application.zip');
+        return fs.rename('./stage/application.zip', './application.zip');
       })
       .then(function() {
-        // Delete the build stage.
-        return rimraf('stage');
+        return rimraf('./stage');
       });
     }
   }
@@ -71,14 +68,14 @@ And combine and convert them into a `build.ninja` file like so
 # more config.js files.
 
 rule rule-0
-  command = cd /home/gareth/Documents/confidant/tmp && node -e "module.exports = [  {    inputs: ['build.js', 'js/**/*.js'],    output: 'app.js',    rule: function() {      // Run the rjs optimizer on the config in 'build.js'.      // Depends on all of the JavaScripts in js/.      var config = require('./build.js');      requirejs.optimize(config);    }  },  {    inputs: ['index.html', 'app.js', 'style/**/*'],    output: 'application.zip',    rule: function() {      // Make build stage directory.      return mkdirp('stage')      .then(function() {        // Copy everything into the stage directory.        return Promise.all([          ncp('index.html', 'stage/index.html'),          ncp('app.js', 'stage/app.js'),          ncp('style', 'stage/style')        ]);      })      .then(function() {        // Zip everything up.        return exec('zip application.zip index.html app.js style/', {          cwd: './stage'        });      })      .then(function() {        // Move the zipball into the root dir.        return move('stage/application.zip', 'application.zip');      })      .then(function() {        // Delete the build stage.        return rimraf('stage');      });    }  }];(function () {      // Run the rjs optimizer on the config in 'build.js'.      // Depends on all of the JavaScripts in js/.      var config = require('./build.js');      requirejs.optimize(config);    })()"
+  command = cd /home/gareth/Documents/confidant/test/fixtures/rjs && node -e "var denodeify = require('promise').denodeify;var exec = require('mz/child_process').exec;var fs = require('mz/fs');var mkdirp = denodeify(require('mkdirp'));var ncp = denodeify(require('ncp').ncp);var rimraf = denodeify(require('rimraf'));var rjs = require('requirejs');module.exports = [  {    inputs: ['build.js', 'js/**/*.js'],    output: 'app.js',    rule: function() {      return fs.readFile('./build.js', 'utf8').then(function(contents) {        var config = JSON.parse(contents);        return new Promise(function(resolve) {          rjs.optimize(config, resolve);        });      });    }  },  {    inputs: ['index.html', 'app.js', 'style/**/*'],    output: 'application.zip',    rule: function() {      return mkdirp('stage')      .then(function() {        return Promise.all([          ncp('index.html', 'stage/index.html'),          ncp('app.js', 'stage/app.js'),          ncp('style', 'stage/style')        ]);      })      .then(function() {        return exec('zip application.zip index.html app.js style', {          cwd: './stage'        });      })      .then(function() {        return fs.rename('./stage/application.zip', './application.zip');      })      .then(function() {        return rimraf('./stage');      });    }  }];(function rule() {    return fs.readFile('./build.js', 'utf8').then(function (contents) {      var config = JSON.parse(contents);      return new Promise(function (resolve) {        rjs.optimize(config, resolve);      });    });  })()"
 
-build /home/gareth/Documents/confidant/tmp/app.js: rule-0 build.js
+build /home/gareth/Documents/confidant/test/fixtures/rjs/app.js: rule-0 /home/gareth/Documents/confidant/test/fixtures/rjs/build.js /home/gareth/Documents/confidant/test/fixtures/rjs/js/hello.js /home/gareth/Documents/confidant/test/fixtures/rjs/js/main.js
 
 rule rule-1
-  command = cd /home/gareth/Documents/confidant/tmp && node -e "module.exports = [  {    inputs: ['build.js', 'js/**/*.js'],    output: 'app.js',    rule: function() {      // Run the rjs optimizer on the config in 'build.js'.      // Depends on all of the JavaScripts in js/.      var config = require('./build.js');      requirejs.optimize(config);    }  },  {    inputs: ['index.html', 'app.js', 'style/**/*'],    output: 'application.zip',    rule: function() {      // Make build stage directory.      return mkdirp('stage')      .then(function() {        // Copy everything into the stage directory.        return Promise.all([          ncp('index.html', 'stage/index.html'),          ncp('app.js', 'stage/app.js'),          ncp('style', 'stage/style')        ]);      })      .then(function() {        // Zip everything up.        return exec('zip application.zip index.html app.js style/', {          cwd: './stage'        });      })      .then(function() {        // Move the zipball into the root dir.        return move('stage/application.zip', 'application.zip');      })      .then(function() {        // Delete the build stage.        return rimraf('stage');      });    }  }];(function () {      // Make build stage directory.      return mkdirp('stage')      .then(function() {        // Copy everything into the stage directory.        return Promise.all([          ncp('index.html', 'stage/index.html'),          ncp('app.js', 'stage/app.js'),          ncp('style', 'stage/style')        ]);      })      .then(function() {        // Zip everything up.        return exec('zip application.zip index.html app.js style/', {          cwd: './stage'        });      })      .then(function() {        // Move the zipball into the root dir.        return move('stage/application.zip', 'application.zip');      })      .then(function() {        // Delete the build stage.        return rimraf('stage');      });    })()"
+  command = cd /home/gareth/Documents/confidant/test/fixtures/rjs && node -e "var denodeify = require('promise').denodeify;var exec = require('mz/child_process').exec;var fs = require('mz/fs');var mkdirp = denodeify(require('mkdirp'));var ncp = denodeify(require('ncp').ncp);var rimraf = denodeify(require('rimraf'));var rjs = require('requirejs');module.exports = [  {    inputs: ['build.js', 'js/**/*.js'],    output: 'app.js',    rule: function() {      return fs.readFile('./build.js', 'utf8').then(function(contents) {        var config = JSON.parse(contents);        return new Promise(function(resolve) {          rjs.optimize(config, resolve);        });      });    }  },  {    inputs: ['index.html', 'app.js', 'style/**/*'],    output: 'application.zip',    rule: function() {      return mkdirp('stage')      .then(function() {        return Promise.all([          ncp('index.html', 'stage/index.html'),          ncp('app.js', 'stage/app.js'),          ncp('style', 'stage/style')        ]);      })      .then(function() {        return exec('zip application.zip index.html app.js style', {          cwd: './stage'        });      })      .then(function() {        return fs.rename('./stage/application.zip', './application.zip');      })      .then(function() {        return rimraf('./stage');      });    }  }];(function rule() {    return mkdirp('stage').then(function () {      return Promise.all([ncp('index.html', 'stage/index.html'), ncp('app.js', 'stage/app.js'), ncp('style', 'stage/style')]);    }).then(function () {      return exec('zip application.zip index.html app.js style', {        cwd: './stage'      });    }).then(function () {      return fs.rename('./stage/application.zip', './application.zip');    }).then(function () {      return rimraf('./stage');    });  })()"
 
-build /home/gareth/Documents/confidant/tmp/application.zip: rule-1 index.html app.js
+build /home/gareth/Documents/confidant/test/fixtures/rjs/application.zip: rule-1 /home/gareth/Documents/confidant/test/fixtures/rjs/index.html /home/gareth/Documents/confidant/test/fixtures/rjs/app.js /home/gareth/Documents/confidant/test/fixtures/rjs/style/app.css
 ```
 
 This enables web devs to write their build rules in a comfortable

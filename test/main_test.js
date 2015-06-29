@@ -21,6 +21,20 @@ let testCases = [
           `${dir}/other/random-copy`
         ].map(path => expect(fs.exists(path)).to.eventually.be.true)
       );
+    },
+  },
+  {
+    name: 'rjs',
+    dir: `${__dirname}/fixtures/rjs`,
+    verify: function() {
+      let dir = this.dir;
+      return Promise.all(
+        [
+          `${dir}/build.ninja`,
+          `${dir}/app.js`,
+          `${dir}/application.zip`
+        ].map(path => expect(fs.exists(path)).to.eventually.be.true)
+      );
     }
   }
 ];
@@ -30,7 +44,8 @@ suite('main', function() {
     test(testCase.name, function() {
       let dir = testCase.dir;
       let execOpts = { cwd: dir, env: process.env };
-      return exec('ninja -t clean', execOpts)
+      return exec('npm install', execOpts)
+      .then(() => exec('ninja -t clean', execOpts))
       .then(() => fs.unlink(`${dir}/build.ninja`))
       .catch(() => { /* will fail if state is already clean */ })
       .then(() => main(dir))

@@ -1,7 +1,11 @@
-/build
-/node_modules
-
 .ninja_deps
 .ninja_log
 build.ninja
-random-copy
+node_modules
+
+/build
+/test/fixtures/config_filter/random-copy
+/test/fixtures/config_filter/one/random-copy
+/test/fixtures/config_filter/other/random-copy
+/test/fixtures/rjs/app.js
+/test/fixtures/rjs/application.zip
