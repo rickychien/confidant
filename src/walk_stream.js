@@ -11,28 +11,33 @@ function WalkStream(dir) {
   this.finished = false;
 
   let walker = walk.walk(dir);
+  let onfile, onerrors;
 
-  walker.on('file', (root, stat, next) => {
+  walker.on('file', onfile = (root, stat, next) => {
     this.buffer.push(`${root}/${stat.name}`);
     next();
   });
 
-  walker.on('errors', () => {
+  walker.on('errors', onerrors = () => {
     Array.from(arguments).map(arg => console.error(arg));
   });
 
-  walker.on('end', () => this.finished = true);
+  walker.once('end', () => {
+    walker.removeListener('file', onfile);
+    walker.removeListener('errors', onerrors);
+    this.finished = true;
+  });
 }
 inherits(WalkStream, Readable);
 module.exports = WalkStream;
 
 WalkStream.prototype._read = function() {
   if (this.buffer.length) {
-    this.push(this.buffer.shift());
+    return this.push(this.buffer.shift());
   }
 
   if (this.finished && !this.buffer.length) {
-    this.push(null);
+    return this.push(null);
   }
 
   // If we're not finished but we don't have anything in the buffer

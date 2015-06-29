@@ -4,9 +4,11 @@ let createRegExpFilter = require('./create_regexp_filter');
 let createWriteStream = require('fs').createWriteStream;
 
 module.exports = function main(dir) {
-  let stream = new WalkStream(dir)
+  let reader = new WalkStream(dir);
+  let writer = createWriteStream(`${dir}/build.ninja`);
+  reader
     .pipe(createRegExpFilter(/.*\/config.js/))
     .pipe(new NinjaStream())
-    .pipe(createWriteStream(`${dir}/build.ninja`));
-  return new Promise(resolve => stream.on('finish', resolve));
+    .pipe(writer);
+  return new Promise(resolve => writer.on('finish', resolve));
 };
