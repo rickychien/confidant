@@ -17,51 +17,48 @@ let defaultOptions = Object.freeze({ exclude: [] });
 function FindStream(dir, options={}) {
   Readable.call(this, { objectMode: true });
   options = Object.assign({}, defaultOptions, options);
-  this.buffer = null;
-  this.dir = dir;
-  if (!path.isAbsolute(this.dir)) {
-    this.dir = path.resolve(process.cwd(), this.dir);
+
+  this.buffer = [];
+  this.finished = false;
+
+  if (path.isAbsolute(dir)) {
+    this.dir = dir;
+  } else {
+    this.dir = path.resolve(process.cwd(), dir);
   }
 
-  let cmd = 'find . -type d';
   let exclude = options.exclude;
-  if (Array.isArray(exclude) && exclude.length) {
-    cmd += formatFindPrune(exclude);
+  let cmd;
+  if (!exclude.length) {
+    cmd = 'find . -type d';
+  } else {
+    cmd = 'find . -type d \\( ' +
+          exclude.map(dir => `-name ${dir}`).join(' -o ') +
+          ' \\) -prune -o -print';
   }
 
-  exec(cmd, {
-    cwd: this.dir,
-    maxBuffer: 8 * Math.pow(10, 6)  // 8M
-  })
-  .then(result => {
+  exec(cmd, { cwd: this.dir, maxBuffer: 8 * Math.pow(10, 6) }).then(result => {
     let stdout = result[0];
-    this.buffer = stdout.split(/(\n|\r)/)
-      .filter(line => !/^\s*$/.test(line))
-      .map(line => path.resolve(this.dir, line))
-      .filter(dir => exists(`${dir}/configure.js`))
-      .map(dir => `${dir}/configure.js`);
+    let dirs = stdout.split(/(\n|\r)/).filter(line => !/^\s*$/.test(line));
+    let files = dirs
+      .map(dir => path.resolve(this.dir, dir, 'configure.js'))
+      .filter(exists);
+    files.forEach(file => this.buffer.push(file));
+    this.finished = true;
   });
 }
 inherits(FindStream, Readable);
 module.exports = FindStream;
 
 FindStream.prototype._read = function() {
-  if (!this.buffer) {
-    // We haven't read anything yet so we should poll... ew.
-    return setTimeout(this._read.bind(this), 10);
-  }
-
   if (this.buffer.length) {
-    let next = path.normalize(path.resolve(this.dir, this.buffer.shift()));
-    return this.push(next);
+    return this.push(this.buffer.shift());
   }
 
-  // All done.
-  this.push(null);
-};
+  if (this.finished && !this.buffer.length) {
+    this.push(null);
+  }
 
-function formatFindPrune(ignore) {
-  return ' \\\( ' +
-         ignore.map(dir => `-name ${dir}`).join(' -o ') +
-         ' \\\) -prune -o -print';
-}
+  // We haven't read anything yet so we should poll... ew.
+  return setTimeout(this._read.bind(this), 10);
+};
