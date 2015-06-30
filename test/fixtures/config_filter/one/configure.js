@@ -6,6 +6,6 @@ module.exports = [
     rule: function() {
       exec('cp random random-copy');
     },
-    output: 'random-copy'
+    outputs: 'random-copy'
   }
 ];

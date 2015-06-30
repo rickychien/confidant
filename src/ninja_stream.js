@@ -45,15 +45,16 @@ NinjaStream.prototype._transform = function(file, encoding, done) {
       true /* isDeep */
     )
     .map(input => `${dir}/${input}`);
+    let outputs = Array.isArray(task.outputs) ?
+      task.outputs.map(output => `${dir}/${output}`).join(' ') :
+      `${dir}/${task.outputs}`;
 
-    let output = `
+    this.push(`
 rule ${rule}
   command = cd ${dir} && node -e "${cmd}"
 
-build ${dir}/${task.output}: ${rule} ${inputs.join(' ')}
-`;
-
-    this.push(output);
+build ${outputs}: ${rule} ${inputs.join(' ')}
+`);
   });
 
   done();

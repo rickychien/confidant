@@ -9,7 +9,7 @@ var rjs = require('requirejs');
 module.exports = [
   {
     inputs: ['build.js', 'js/**/*.js'],
-    output: 'app.js',
+    outputs: 'app.js',
     rule: function() {
       return fs.readFile('./build.js', 'utf8').then(function(contents) {
         var config = JSON.parse(contents);
@@ -21,7 +21,7 @@ module.exports = [
   },
   {
     inputs: ['index.html', 'app.js', 'style/**/*'],
-    output: 'application.zip',
+    outputs: 'application.zip',
     rule: function() {
       return mkdirp('stage')
       .then(function() {

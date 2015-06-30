@@ -19,12 +19,7 @@ let testCases = [
           `${dir}/random-copy`,
           `${dir}/one/random-copy`,
           `${dir}/other/random-copy`
-        ].map(path => {
-          return expect(fs.exists(path))
-          .to
-          .eventually
-          .equal(true, `${path} should exist`);
-        })
+        ].map(checkExists)
       );
     },
   },
@@ -38,8 +33,20 @@ let testCases = [
           `${dir}/build.ninja`,
           `${dir}/app.js`,
           `${dir}/application.zip`
-        ].map(path => expect(fs.exists(path)).to.eventually.be.true)
+        ].map(checkExists)
       );
+    }
+  },
+  {
+    name: 'multiple outputs',
+    dir: `${__dirname}/fixtures/multiple-output`,
+    verify: function() {
+      let dir = this.dir;
+      return Promise.all([
+        `${dir}/build.ninja`,
+        `${dir}/a`,
+        `${dir}/b`
+      ].map(checkExists));
     }
   }
 ];
@@ -61,3 +68,10 @@ suite('main', function() {
     });
   });
 });
+
+function checkExists(path) {
+  return expect(fs.exists(path)).to.eventually.equal(
+    true,
+    `${path} should exist`
+  );
+}
