@@ -2,6 +2,7 @@
  * @fileoverview Executes find and sends the results through a stream.
  */
 let Readable = require('stream').Readable;
+let debug = require('debug')('confidant/find_stream');
 let exec = require('mz/child_process').exec;
 let exists = require('fs').existsSync;
 let inherits = require('util').inherits;
@@ -27,6 +28,8 @@ function FindStream(dir, options={}) {
     this.dir = path.resolve(process.cwd(), dir);
   }
 
+  debug(`Scanning ${dir} for configure.js files...`);
+
   let exclude = options.exclude;
   let cmd;
   if (!exclude.length) {
@@ -43,7 +46,10 @@ function FindStream(dir, options={}) {
     let files = dirs
       .map(dir => path.resolve(this.dir, dir, 'configure.js'))
       .filter(exists);
-    files.forEach(file => this.buffer.push(file));
+    files.forEach(file => {
+      debug(`Found ${file}`);
+      this.buffer.push(file);
+    });
     this.finished = true;
   });
 }

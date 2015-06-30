@@ -3,6 +3,7 @@
  *     and writes out ninja build rules.
  */
 let Transform = require('stream').Transform;
+let debug = require('debug')('confidant/ninja_stream');
 let dirname = require('path').dirname;
 let flatten = require('lodash/array/flatten');
 let glob = require('glob').sync;
@@ -22,9 +23,11 @@ inherits(NinjaStream, Transform);
 module.exports = NinjaStream;
 
 NinjaStream.prototype._transform = function(file, encoding, done) {
+  debug(`Parsing ${file}`);
   let contents = readFileSync(file);
   let dir = dirname(file);
   let tasks = require(file);
+  debug(`Parsing ${file}... found ${tasks.length} tasks`);
   tasks.forEach(task => {
     let rule = `rule-${this.id++}`;
     let js = task.rule.toString();  // Function.prototype.toString
