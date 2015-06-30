@@ -81,3 +81,28 @@ build /home/gareth/Documents/confidant/test/fixtures/rjs/application.zip: rule-1
 This enables web devs to write their build rules in a comfortable
 setting while leveraging ninja's ability to run independent tasks in
 parallel and update targets incrementally.
+
+### Installation
+
+confidant is an npm package. You can install it globally with `npm
+install -g confidant`. Note that it's only tested with nodejs and iojs
+versions 0.12 and up.
+
+### Usage
+
+From `confidant -h`
+
+```
+usage: confidant [-h] [-v] [--exclude EXCLUDE] dir
+
+Command line tool to configure your ninja build in pure js
+
+Positional arguments:
+  dir                Where to search for configure.js build files
+
+Optional arguments:
+  -h, --help         Show this help message and exit.
+  -v, --version      Show program's version number and exit.
+  --exclude EXCLUDE  Optional comma separated list of directories to
+                     omit from fs scan
+```
