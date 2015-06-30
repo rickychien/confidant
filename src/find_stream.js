@@ -62,7 +62,7 @@ FindStream.prototype._read = function() {
   }
 
   if (this.finished && !this.buffer.length) {
-    this.push(null);
+    return this.push(null);
   }
 
   // We haven't read anything yet so we should poll... ew.
