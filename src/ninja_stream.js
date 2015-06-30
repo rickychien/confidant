@@ -60,5 +60,6 @@ build ${outputs}: ${rule} ${inputs.join(' ')}
 `);
   });
 
+  debug(`Wrote rules from ${file} to build.ninja`);
   done();
 };
