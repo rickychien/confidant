@@ -1,7 +1,6 @@
 let ArgumentParser = require('argparse').ArgumentParser;
+let FindStream = require('./find_stream');
 let NinjaStream = require('./ninja_stream');
-let WalkStream = require('./walk_stream');
-let createRegExpFilter = require('./create_regexp_filter');
 let createWriteStream = require('fs').createWriteStream;
 
 let parser = new ArgumentParser({
@@ -30,11 +29,8 @@ module.exports = function main(args=parser.parseArgs()) {
     readerOpts.exclude = exclude.split(',');
   }
 
-  let reader = new WalkStream(dir, readerOpts);
+  let reader = new FindStream(dir, readerOpts);
   let writer = createWriteStream(`${dir}/build.ninja`);
-  reader
-    .pipe(createRegExpFilter(/.*\/configure.js$/))
-    .pipe(new NinjaStream())
-    .pipe(writer);
+  reader.pipe(new NinjaStream()).pipe(writer);
   return new Promise(resolve => writer.on('finish', resolve));
 };
