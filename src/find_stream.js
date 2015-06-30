@@ -3,12 +3,11 @@
  */
 let Readable = require('stream').Readable;
 let exec = require('mz/child_process').exec;
+let exists = require('fs').existsSync;
 let inherits = require('util').inherits;
 let path = require('path');
 
-let defaultOptions = Object.freeze({
-  exclude: []
-});
+let defaultOptions = Object.freeze({ exclude: [] });
 
 /**
  * Options:
@@ -24,15 +23,23 @@ function FindStream(dir, options={}) {
     this.dir = path.resolve(process.cwd(), this.dir);
   }
 
-  let cmd = `find . -name "configure.js"`;
+  let cmd = 'find . -type d';
   let exclude = options.exclude;
   if (Array.isArray(exclude) && exclude.length) {
-    cmd += ` ${formatFindPrune(exclude)}`;
+    cmd += formatFindPrune(exclude);
   }
 
-  exec(cmd, { cwd: this.dir }).then(result => {
+  exec(cmd, {
+    cwd: this.dir,
+    maxBuffer: 8 * Math.pow(10, 6)  // 8M
+  })
+  .then(result => {
     let stdout = result[0];
-    this.buffer = stdout.split(/(\n|\r)/).filter(line => !/^\s*$/.test(line));
+    this.buffer = stdout.split(/(\n|\r)/)
+      .filter(line => !/^\s*$/.test(line))
+      .map(line => path.resolve(this.dir, line))
+      .filter(dir => exists(`${dir}/configure.js`))
+      .map(dir => `${dir}/configure.js`);
   });
 }
 inherits(FindStream, Readable);
@@ -54,5 +61,7 @@ FindStream.prototype._read = function() {
 };
 
 function formatFindPrune(ignore) {
-  return ignore.map(dir => `-o -path ${dir}`).join(' ');
+  return ' \\\( ' +
+         ignore.map(dir => `-name ${dir}`).join(' -o ') +
+         ' \\\) -prune -o -print';
 }
