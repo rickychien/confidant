@@ -90,6 +90,8 @@ versions 0.12 and up.
 
 ### Usage
 
+#### From the command line
+
 From `confidant -h`
 
 ```
@@ -105,4 +107,15 @@ Optional arguments:
   -v, --version      Show program's version number and exit.
   --exclude EXCLUDE  Optional comma separated list of directories to
                      omit from fs scan
+```
+
+#### From within nodejs
+
+```js
+var confidant = require('confidant');
+// confidant can be invoked with an object representing its command line args
+confidant({
+  dir: './path/to/somewhere',
+  exclude: 'bower_components,node_modules'  // Or whatever else
+});
 ```
