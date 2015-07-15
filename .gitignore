@@ -5,6 +5,8 @@ build.ninja
 node_modules
 
 /build
+/test/fixtures/async/c
+/test/fixtures/async/d
 /test/fixtures/config_filter/random-copy
 /test/fixtures/config_filter/one/random-copy
 /test/fixtures/config_filter/other/random-copy

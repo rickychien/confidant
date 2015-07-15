@@ -2,6 +2,7 @@
  * @fileoverview A stream that reads in confidant's configuration files
  *     and writes out ninja build rules.
  */
+let Readable = require('stream').Readable;
 let Transform = require('stream').Transform;
 let debug = require('debug')('confidant/ninja_stream');
 let dirname = require('path').dirname;
@@ -24,10 +25,22 @@ module.exports = NinjaStream;
 
 NinjaStream.prototype._transform = function(file, encoding, done) {
   debug(`Parsing ${file}`);
+  let build = require(file);
+  if (Array.isArray(build)) {
+    debug('Build config sync');
+    this._syncTransform(file, encoding, build, done);
+  } else if (typeof build === 'function') {
+    debug('Build config async');
+    this._asyncTransform(file, encoding, build, done);
+  } else {
+    throw new Error(`Invalid build specified in ${file}`);
+  }
+};
+
+NinjaStream.prototype._syncTransform = function(file, encoding, tasks, done) {
   let contents = readFileSync(file);
   let dir = dirname(file);
-  let tasks = require(file);
-  debug(`Parsing ${file}... found ${tasks.length} tasks`);
+  debug(`Checking ${file}... found ${tasks.length} tasks`);
   tasks.forEach(task => {
     let rule = `rule-${this.id++}`;
     let js = task.rule.toString();  // Function.prototype.toString
@@ -63,4 +76,11 @@ build ${outputs}: ${rule} ${inputs.join(' ')}
 
   debug(`Wrote rules from ${file} to build.ninja`);
   done();
+};
+
+NinjaStream.prototype._asyncTransform = function(file, encoding, RuleStream, done) {
+  let tasks = [];
+  let stream = new RuleStream();
+  stream.on('data', rule => tasks.push(rule));
+  stream.on('end', () => this._syncTransform(file, encoding, tasks, done));
 };

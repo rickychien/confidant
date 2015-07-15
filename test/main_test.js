@@ -48,6 +48,17 @@ let testCases = [
         `${dir}/b`
       ].map(checkExists));
     }
+  },
+  {
+    name: 'async',
+    dir: `${__dirname}/fixtures/async`,
+    verify: function() {
+      let dir = this.dir;
+      return Promise.all([
+        `${dir}/c`,
+        `${dir}/d`
+      ].map(checkExists));
+    }
   }
 ];
 
