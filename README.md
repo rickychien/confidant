@@ -82,6 +82,48 @@ This enables web devs to write their build rules in a comfortable
 setting while leveraging ninja's ability to run independent tasks in
 parallel and update targets incrementally.
 
+#### Specifying rules asynchronously
+
+Suppose you wanted to defer specifying parts of a build config (a given
+task's inputs, rule, and outputs) until runtime. Additionally, imagine
+you need to do some work asynchronously to figure out parts of your
+build config. For that case, confidant also supports exporting a [readable
+stream](https://nodejs.org/api/stream.html#stream_class_stream_readable)
+which your build will write rules to as it discovers them. For instance:
+
+```js
+var Promise = require('es6-promise').Promise;
+var Readable = require('stream').Readable;
+var inherits = require('util').inherits;
+
+function BuildRuleStream() {
+  Readable.call(this, { objectMode: true });
+  this.buffer = [];
+  this.finished = false;
+  this._fillUpBufferAsync();
+}
+inherits(BuildRuleStream, Readable);
+module.exports = BuildRuleStream;
+
+BuildRuleStream.prototype._read = function() {
+  if (this.buffer.length) {
+    return this.push(this.buffer.shift());
+  }
+
+  if (this.finished && !this.buffer.length) {
+    return this.push(null);
+  }
+
+  return setTimeout(this._read.bind(this), 10);
+};
+
+BuildRuleStream.prototype._fillUpBufferAsync = function() {
+  // Does some async things to determine build rules and pushes them
+  // onto this.buffer as they come in. Sets this.finished to true
+  // once all the build rules have been pushed onto the buffer.
+};
+```
+
 ### Installation
 
 confidant is an npm package. You can install it globally with `npm
