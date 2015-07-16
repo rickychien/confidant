@@ -47,7 +47,8 @@ NinjaStream.prototype._transform = function(file, encoding, done) {
       }),
       true /* isDeep */
     )
-    .map(input => `${dir}/${input}`);
+    .filter(input => input.indexOf(' ') === -1)  // ninja can't handle ws
+    .map(input => `${dir}/${input.replace('$', '$$$$')}`);
     let outputs = Array.isArray(task.outputs) ?
       task.outputs.map(output => `${dir}/${output}`).join(' ') :
       `${dir}/${task.outputs}`;
