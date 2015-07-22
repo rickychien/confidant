@@ -44,7 +44,7 @@ NinjaStream.prototype._syncTransform = function(file, encoding, tasks, done) {
   tasks.forEach(task => {
     let rule = `rule-${this.id++}`;
     let js = task.rule.toString();  // Function.prototype.toString
-    let cmd = `${contents}(${js})()`.replace(/(\n|\r)/g, '');
+    let cmd = ninjaEscape(`${contents}(${js})()`.replace(/(\n|\r)/g, ''));
     let inputs = flatten(
       task.inputs.map(input => {
         if (input.includes('*') ||
@@ -61,10 +61,10 @@ NinjaStream.prototype._syncTransform = function(file, encoding, tasks, done) {
       true /* isDeep */
     )
     .filter(input => input.indexOf(' ') === -1)  // ninja can't handle ws
-    .map(input => `${dir}/${input.replace('$', '$$$$')}`);
+    .map(input => `${dir}/${ninjaEscape(input)}`);
     let outputs = Array.isArray(task.outputs) ?
-      task.outputs.map(output => `${dir}/${output}`).join(' ') :
-      `${dir}/${task.outputs}`;
+      task.outputs.map(output => `${dir}/${ninjaEscape(output)}`).join(' ') :
+      `${dir}/${ninjaEscape(task.outputs)}`;
 
     this.push(`
 rule ${rule}
@@ -84,3 +84,7 @@ NinjaStream.prototype._asyncTransform = function(file, encoding, RuleStream, don
   stream.on('data', rule => tasks.push(rule));
   stream.on('end', () => this._syncTransform(file, encoding, tasks, done));
 };
+
+function ninjaEscape(str) {
+  return str.replace('$', '$$$$');
+}
