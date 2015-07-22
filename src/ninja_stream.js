@@ -86,5 +86,5 @@ NinjaStream.prototype._asyncTransform = function(file, encoding, RuleStream, don
 };
 
 function ninjaEscape(str) {
-  return str.replace('$', '$$$$');
+  return str.replace(new RegExp('\\$', 'g'), '$$$$');
 }
