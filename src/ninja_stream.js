@@ -43,7 +43,7 @@ NinjaStream.prototype._syncTransform = function(file, encoding, tasks, done) {
   debug(`Checking ${file}... found ${tasks.length} tasks`);
   tasks.forEach(task => {
     let rule = `rule-${this.id++}`;
-    let js = task.rule.toString();  // Function.prototype.toString
+    let js = task.rule.toString() + '.bind(' + JSON.stringify(task) + ')';  // Function.prototype.toString
     let cmd = ninjaEscape(`${contents}(${js})()`.replace(/(\n|\r)/g, ''));
     let inputs = flatten(
       task.inputs.map(input => {
@@ -90,5 +90,7 @@ NinjaStream.prototype._asyncTransform = function(file, encoding, RuleStream, don
 };
 
 function ninjaEscape(str) {
-  return str.replace(new RegExp('\\$', 'g'), '$$$$');
+  return str
+    .replace(new RegExp('\\$', 'g'), '$$$$')
+    .replace(/"/g, '\\"');
 }
