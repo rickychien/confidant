@@ -80,9 +80,13 @@ build ${outputs}: ${rule} ${inputs.join(' ')}
 
 NinjaStream.prototype._asyncTransform = function(file, encoding, RuleStream, done) {
   let tasks = [];
+  let dir = dirname(file);
+  let prev = process.cwd();
+  process.chdir(dir);
   let stream = new RuleStream();
   stream.on('data', rule => tasks.push(rule));
   stream.on('end', () => this._syncTransform(file, encoding, tasks, done));
+  process.chdir(prev);
 };
 
 function ninjaEscape(str) {
