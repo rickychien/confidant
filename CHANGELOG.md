@@ -1,3 +1,8 @@
+### 0.4.0
+
++ Environment variables now get passed from confidant to the processes
+  that run your js build rules. Thanks @rickychien!
+
 ### 0.3.0
 
 + You can now export a nodejs readable stream instead of an array of
