@@ -101,11 +101,18 @@ function ninjaEscape(str) {
     .replace(/"/g, '\\"');
 }
 
+function envEscape(str) {
+  return ninjaEscape(str)
+    .replace(/'/g, '\\"')
+    .replace(/\(/g, '\\(')
+    .replace(/\)/g, '\\)');
+}
+
 function envToString(env) {
   let str = '';
 
   for (let key in env) {
-    str += `${key}='${env[key]}' `;
+    str += `${envEscape(key)}='${envEscape(env[key])}' `;
   }
 
   return str.trim();
