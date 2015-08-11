@@ -6,10 +6,11 @@
 let Transform = require('stream').Transform;
 let debug = require('debug')('confidant/ninja_stream');
 let dirname = require('path').dirname;
-let flatten = require('lodash/array/flatten');
-let glob = require('glob').sync;
+let envToString = require('./escape').envToString;
 let inherits = require('util').inherits;
 let readFileSync = require('fs').readFileSync;
+let rule = require('./rule');
+let streamToArray = require('./stream_to_array');
 
 function NinjaStream() {
   Transform.call(this, { objectMode: true });
@@ -42,80 +43,45 @@ NinjaStream.prototype._transform = function(file, encoding, done) {
 };
 
 NinjaStream.prototype._syncTransform = function(file, encoding, tasks, done) {
-  let contents = readFileSync(file);
-  let dir = dirname(file);
-
-  debug(`Checking ${file}... found ${tasks.length} tasks`);
-
-  tasks.forEach(task => {
-    let rule = `rule-${this.id++}`;
-    let js = task.rule.toString() + '.bind(' + JSON.stringify(task) + ')';  // Function.prototype.toString
-    let cmd = ninjaEscape(`${contents}(${js})()`.replace(/(\n|\r)/g, ''));
-    let inputs = flatten(
-      task.inputs.map(input => {
-        if (input.includes('*') ||
-            input.includes('?') ||
-            input.includes('[') ||
-            input.includes('!') ||
-            input.includes('+') ||
-            input.includes('@')) {
-          return glob(input, { cwd: dir });
-        }
-
-        return input;
-      }),
-      true /* isDeep */
-    )
-    .filter(input => input.indexOf(' ') === -1)  // ninja can't handle ws
-    .map(input => `${dir}/${ninjaEscape(input)}`);
-    let outputs = Array.isArray(task.outputs) ?
-      task.outputs.map(output => `${dir}/${ninjaEscape(output)}`).join(' ') :
-      `${dir}/${ninjaEscape(task.outputs)}`;
-
-    this.push(`
-rule ${rule}
-  command = cd ${dir} && ${envToString(process.env)} node -e "${cmd}"
-
-build ${outputs}: ${rule} ${inputs.join(' ')}
-`);
+  tasks.forEach((task, index) => {
+    this._createRule(
+      rule.getOutputs(file, task),
+      rule.getInputs(file, task),
+      dirname(file),
+      `(function() { require('./configure')[${index}].rule(); })();`
+    );
   });
 
-  debug(`Wrote rules from ${file} to build.ninja`);
+  debug(`Wrote ${tasks.length} rules from ${file} to build.ninja`);
   done();
 };
 
-NinjaStream.prototype._asyncTransform = function(file, encoding, RuleStream, done) {
-  let tasks = [];
-  let dir = dirname(file);
+NinjaStream.prototype._asyncTransform = async function(file, encoding, RuleStream, done) {
   let prev = process.cwd();
-  process.chdir(dir);
-  let stream = new RuleStream();
-  stream.on('data', rule => tasks.push(rule));
-  stream.on('end', () => this._syncTransform(file, encoding, tasks, done));
+  process.chdir(dirname(file));
+  let tasks = await streamToArray(new RuleStream());
   process.chdir(prev);
+  tasks.forEach((task, index) => {
+    this._createRule(
+      rule.getOutputs(file, task),
+      rule.getInputs(file, task),
+      dirname(file),
+      `(function() { var Stream = require('./configure'); var tasks = []; var stream = new Stream(); stream.on('data', function(rule) { tasks.push(rule); }); stream.on('end', function() { tasks[${index}].rule(); }); })();`
+    );
+  });
+
+  debug(`Wrote ${tasks.length} rules from ${file} to build.ninja`);
+  done();
 };
 
-function ninjaEscape(str) {
-  return str
-    .replace(new RegExp('\\$', 'g'), '$$$$')
-    .replace(/"/g, '\\"');
-}
+NinjaStream.prototype._createRule = function(outputs, inputs, dir, cmd) {
+  let id = this.id++;
+  this.push(`
+rule rule-${id}
+  command = cd ${dir} && ${envToString(process.env)} node -e "${cmd}"
 
-function envEscape(str) {
-  return ninjaEscape(str)
-    .replace(/'/g, '\\"')
-    .replace(/\(/g, '\\(')
-    .replace(/\)/g, '\\)');
-}
-
-function envToString(env) {
-  let str = '';
-
-  for (let key in env) {
-    str += `${envEscape(key)}='${envEscape(env[key])}' `;
-  }
-
-  return str.trim();
-}
+build ${outputs.join(' ')}: rule-${id} ${inputs.join(' ')}
+`);
+};
 
 module.exports = NinjaStream;
