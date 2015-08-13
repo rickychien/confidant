@@ -2,13 +2,12 @@
  * @fileoverview A stream that reads in confidant's configuration files
  *               and writes out ninja build rules.
  */
-
 let Transform = require('stream').Transform;
+let chdir = require('./chdir');
 let debug = require('debug')('confidant/ninja_stream');
 let dirname = require('path').dirname;
 let envToString = require('./escape').envToString;
 let inherits = require('util').inherits;
-let readFileSync = require('fs').readFileSync;
 let rule = require('./rule');
 let streamToArray = require('./stream_to_array');
 
@@ -21,25 +20,24 @@ function NinjaStream() {
 # more configure.js files.
 `);
 }
-
 inherits(NinjaStream, Transform);
 
-NinjaStream.prototype._transform = function(file, encoding, done) {
+NinjaStream.prototype._transform = async function(file, encoding, done) {
   debug(`Parsing ${file}`);
   let dir = dirname(file);
-  let prev = process.cwd();
-  process.chdir(dir);
-  let build = require(`${dir}/configure.js`);
-  process.chdir(prev);
+  let build = await chdir(dir, () => require(`${dir}/configure.js`));
+
   if (Array.isArray(build)) {
     debug('Build config sync');
-    this._syncTransform(file, encoding, build, done);
-  } else if (typeof build === 'function') {
-    debug('Build config async');
-    this._asyncTransform(file, encoding, build, done);
-  } else {
-    throw new Error(`Invalid build specified in ${file}`);
+    return this._syncTransform(file, encoding, build, done);
   }
+
+  if (typeof build === 'function') {
+    debug('Build config async');
+    return this._asyncTransform(file, encoding, build, done);
+  }
+
+  throw new Error(`Invalid build specified in ${file}`);
 };
 
 NinjaStream.prototype._syncTransform = function(file, encoding, tasks, done) {
@@ -57,10 +55,7 @@ NinjaStream.prototype._syncTransform = function(file, encoding, tasks, done) {
 };
 
 NinjaStream.prototype._asyncTransform = async function(file, encoding, RuleStream, done) {
-  let prev = process.cwd();
-  process.chdir(dirname(file));
-  let tasks = await streamToArray(new RuleStream());
-  process.chdir(prev);
+  let tasks = await chdir(dirname(file), () => streamToArray(new RuleStream()));
   tasks.forEach((task, index) => {
     this._createRule(
       rule.getOutputs(file, task),

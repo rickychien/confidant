@@ -1,3 +1,8 @@
+### 0.5.0
+
++ Confidant no longer serializes your `configure.js` and instead loads
+  it at build time (as well as configure time).
+
 ### 0.4.0
 
 + Environment variables now get passed from confidant to the processes

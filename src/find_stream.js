@@ -1,7 +1,6 @@
 /**
  * @fileoverview Executes find and sends the results through a stream.
  */
-
 let Readable = require('stream').Readable;
 let debug = require('debug')('confidant/find_stream');
 let exec = require('mz/child_process').exec;
